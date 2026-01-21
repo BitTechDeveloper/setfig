@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Webcam Photo & Video Recorder</title>
+        <style>
+            body {
+                font-family: sans-serif;
+                text-align: center;
+                padding: 20px;
+            }
+            video,
+            canvas {
+                border: 2px solid #333;
+                margin: 10px;
+                max-width: 100%;
+            }
+            button {
+                padding: 10px 20px;
+                margin: 10px;
+                font-size: 16px;
+            }
+            #photo-preview {
+                max-width: 100%;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Webcam Photo & Video Recorder</h1>
+        <video id="video" width="640" height="480" autoplay playsinline></video>
+        <br />
+        <button id="snap">Take Photo</button>
+        <br />
+        <canvas
+            id="canvas"
+            width="640"
+            height="480"
+            style="display: none"
+        ></canvas>
+        <img id="photo-preview" alt="Photo preview will appear here" />
+        <br />
+        <button id="start">Start Video Recording</button>
+        <button id="stop" disabled>Stop Video Recording</button>
+
+        <script>
+            const video = document.getElementById("video");
+            const canvas = document.getElementById("canvas");
+            const photoPreview = document.getElementById("photo-preview");
+            const snapBtn = document.getElementById("snap");
+            const startBtn = document.getElementById("start");
+            const stopBtn = document.getElementById("stop");
+
+            let stream;
+            let recorder;
+            let chunks = [];
+
+            async function init() {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: true,
+                        audio: true,
+                    });
+                    video.srcObject = stream;
+                } catch (err) {
+                    alert(
+                        "Camera access denied or not available: " + err.message,
+                    );
+                }
+            }
+
+            // Take photo
+            snapBtn.addEventListener("click", () => {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext("2d").drawImage(video, 0, 0);
+                photoPreview.src = canvas.toDataURL("image/png");
+                photoPreview.style.display = "block";
+
+                const link = document.createElement("a");
+                link.download = "photo-" + Date.now() + ".png";
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+            });
+
+            // Video recording
+            startBtn.addEventListener("click", () => {
+                chunks = [];
+                recorder = new MediaRecorder(stream);
+                recorder.ondataavailable = (e) => chunks.push(e.data);
+                recorder.onstop = () => {
+                    const blob = new Blob(chunks, { type: "video/webm" });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement("a");
+                    link.download = "video-" + Date.now() + ".webm";
+                    link.href = url;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                };
+                recorder.start();
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+            });
+
+            stopBtn.addEventListener("click", () => {
+                recorder.stop();
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+            });
+
+            init();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,10 @@
+Installation:
+    sudo apt update
+    sudo apt upgrade
+    sudo apt install kde-plasma-desktop sddm # task-kde-desktop for additional apps
+    # sudo apt install --no-install-recommends kde-plasma-desktop sddm # for minimalist, require hardwork
+
+
+After installation:
+    sudo systemctl enable sddm
+    sudo reboot

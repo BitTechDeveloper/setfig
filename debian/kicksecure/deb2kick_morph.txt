@@ -1,0 +1,48 @@
+Install Kicksecure inside Debian
+
+Prerequisites:
+    get sudo access
+    sudo apt update
+    sudo apt full-upgrade
+    apt install --no-install-recommends sudo adduser
+
+    visudo
+    Allow members of group sudo to execute any command
+    %sudo   ALL=(ALL:ALL) ALL
+
+    Create group console.
+    /usr/sbin/addgroup --system console
+
+    7 Add your Linux account user name to group console. [8]
+    Note: Replace account user with your actual user name.
+    /usr/sbin/adduser user console
+
+    8 Install console related packages.
+    Note: This might also result in removal of plymouth, which is good, because it is unsupported. [9]
+    sudo apt install console-data console-common kbd keyboard-configuration
+
+
+
+Installation
+Add the Kicksecure Repository:
+    Package curl needs to be installed.
+    sudo apt update && sudo apt full-upgrade
+    sudo apt install --no-install-recommends curl
+
+
+Download Kicksecure Signing Key:
+    sudo  curl --tlsv1.3 --output /usr/share/keyrings/derivative.asc --url https://www.kicksecure.com/keys/derivative.asc
+
+
+Add Repository:
+    echo "Types: deb
+    URIs: https://deb.kicksecure.com
+    Suites: trixie
+    Components: main contrib non-free
+    Enabled: yes
+    Signed-By: /usr/share/keyrings/derivative.asc" | sudo tee /etc/apt/sources.list.d/derivative.sources
+
+
+Install the Kicksecure Package
+    sudo apt update && sudo apt full-upgrade
+    sudo apt install --no-install-recommends kicksecure-baremetal-server
