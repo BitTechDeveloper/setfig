@@ -8,3 +8,9 @@ Installation:
 After installation:
     sudo systemctl enable sddm
     sudo reboot
+
+
+Before Installation:
+    check if is there are privious kde plasma packages exist, if so then purge again:
+        dpkg -l | grep -E 'kde|plasma|kwin|sddm' | awk '{print $2}' | xargs sudo apt purge
+        sudo apt autoremove --purge
