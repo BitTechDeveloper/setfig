@@ -46,3 +46,20 @@ Add Repository:
 Install the Kicksecure Package
     sudo apt update && sudo apt full-upgrade
     sudo apt install --no-install-recommends kicksecure-baremetal-server
+
+
+Install mokutil:
+    sudo apt install --no-install-recommends mokutil
+
+
+Post-Installation
+Enable the /etc/apt/sources.list.d/derivative.sources Kicksecure APT repository:
+    sudo repository-dist --enable --repository stable
+
+
+Move the original /etc/apt/sources.list file out of the way (or delete it) because it is replaced by Kicksecure's /etc/apt/sources.list.d/debian.sources:
+    sudo mv /etc/apt/sources.list ~/
+
+
+Create an empty /etc/apt/sources.list file:
+    sudo touch /etc/apt/sources.list
