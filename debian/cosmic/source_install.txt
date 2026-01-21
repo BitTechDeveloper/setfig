@@ -1,0 +1,153 @@
+1. Update System
+    sudo apt update && sudo apt full-upgrade -y
+    sudo apt autoremove && sudo apt autoclean -y
+
+
+2. Install Build Dependencies
+Core (required):
+    sudo apt install -y build-essential dbus git libdbus-1-dev libdisplay-info-dev libflatpak-dev \ 
+    libglvnd-dev libgstreamer-plugins-base1.0-dev libgstreamer1.0-dev libinput-dev libpam0g-dev libpixman-1-dev \ 
+    libseat-dev libssl-dev libwayland-dev libxkbcommon-dev udev
+
+Optional (recommended for full features, faster linking, audio/video):
+    sudo apt install -y libclang-dev libexpat1-dev libfontconfig-dev libfreetype-dev libgbm-dev libpipewire-0.3-dev libpulse-dev libsystemd-dev lld mold
+
+
+3. Install Rust Toolchain
+Rustup is not in Debian repositories; install via official script:
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    source "$HOME/.cargo/env"
+    rustup default stable
+
+
+4. Install Just (Build Tool)
+    cargo install just
+
+
+5. Clone and Build COSMIC
+    git clone --recurse-submodules https://github.com/pop-os/cosmic-epoch.git
+    cd cosmic-epoch
+    just sysext
+This builds all components (compositor, applets, session, greeter, apps, etc.) and creates a cosmic-sysext directory (portable image hierarchy).
+
+
+6. Install the System Extension
+    sudo mkdir -p /var/lib/extensions
+    sudo cp -r cosmic-sysext /var/lib/extensions/
+    sudo systemctl enable --now systemd-sysext.service
+    sudo systemd-sysext refresh
+
+
+7. Install Runtime Dependencies (Recommended)
+For audio (PipeWire preferred over PulseAudio):
+    sudo apt install -y pipewire pipewire-pulse wireplumber
+    systemctl --user --now enable pipewire pipewire-pulse wireplumber
+
+For graphics drivers (adjust for your hardware):
+    sudo apt install -y mesa-vulkan-drivers libvulkan1
+(NVIDIA users: Install proprietary drivers via apt and reboot; additional config may be needed for Wayland.)
+
+Basic fonts/icons (COSMIC includes its own, but fallbacks help):
+    sudo apt install -y adwaita-icon-theme fonts-noto-color-emoji
+
+
+8. Launch COSMIC
+Manual test from console (recommended first):
+    dbus-run-session cosmic-session
+This starts the full COSMIC desktop on Wayland. Logout via menu to exit.
+
+Graphical login with display manager (for automatic boot):
+COSMIC provides cosmic-greeter (official login screen), but the sysext method does not auto-configure it as the display manager.
+Use a compatible Wayland-supporting DM and select the COSMIC session.
+Install SDDM (good Wayland support):
+    sudo apt install -y sddm
+    sudo systemctl enable sddm
+    sudo reboot
+
+
+At SDDM login:
+
+Session selector (gear icon) should show "COSMIC".
+Select it and log in.
+
+If the session does not appear:
+
+Verify merge: systemd-sysext status
+Check file: ls /usr/share/wayland-sessions/cosmic.desktop
+
+Alternative DMs: LightDM (sudo apt install lightdm) or GDM (heavier).
+
+
+
+Notes
+
+This matches the official source-build method exactly.
+For production stability and updates, System76 recommends Pop!_OS 24.04+.
+Rebuild after updates: cd cosmic-epoch && git pull --recurse-submodules && just sysext, then refresh extension.
+Issues (e.g., missing features): Check hardware (Intel/AMD preferred; NVIDIA may need tweaks) or report on GitHub.
+COSMIC is Wayland-native; no X11 fallback.
+
+This setup provides the complete COSMIC experience (compositor, panels, applets, settings, greeter/session) as built from source.
+
+
+
+Setting Up greetd with cosmic-greeter (Recommended COSMIC Login Method)
+This follows the official COSMIC design: cosmic-greeter (the integrated login/lock screen) paired with greetd (minimal daemon). It provides the intended experience when building from source via sysext.
+Prerequisites:
+    COSMIC built and sysext applied (as in previous instructions: just sysext, copied to /var/lib/extensions/, systemd-sysext refresh).
+    Verify: systemd-sysext status shows cosmic merged, and which cosmic-greeter returns /usr/bin/cosmic-greeter.
+    No other display manager running (if you installed SDDM/LightDM earlier, disable: sudo systemctl disable sddm or equivalent, then reboot).
+
+1. Install greetd
+greetd is available in Debian 13 (Trixie/testing):
+    sudo apt update
+    sudo apt install -y greetd
+This provides the daemon and a default config (often with agreety as fallback console greeter).
+
+2. Create System User for cosmic-greeter
+COSMIC requires running the greeter as a dedicated system user:
+    sudo adduser --system --no-create-home --group cosmic-greeter
+
+3. Configure greetd
+Edit (or create) the config file:
+    sudo mkdir -p /etc/greetd
+    sudo nano /etc/greetd/config.toml
+Use this minimal configuration (closest to official/distribution setups like Gentoo/Pop!_OS):
+    [terminal]
+    vt = 1
+
+    [default_session]
+    user = "cosmic-greeter"
+    command = "cosmic-greeter"
+vt = 1: Starts graphical login on first virtual terminal (common default; change to 7 if preferred).
+No full path needed for command (/usr/bin is in PATH after sysext merge).
+
+Optional: For a console fallback (if cosmic-greeter fails), add an initial_session section with agreety (included with greetd):
+    [initial_session]
+    user = "root"
+    command = "agreety --cmd /bin/sh"
+
+4. (Optional) cosmic-greeter Configuration
+For advanced options (e.g., auto-login, theming):
+    sudo nano /etc/greetd/cosmic-greeter.toml
+
+Example for no auto-login (default):
+    [greeter]
+    auto_login = false
+(Refer to Pop!_OS examples or cosmic-greeter repo for more; auto-login requires specifying user/session.)
+
+5. Enable and Start greetd
+    sudo systemctl enable --now greetd
+6. Reboot and Test
+    sudo reboot
+Boot should show the COSMIC greeter (native login screen).
+Log in: It launches the full COSMIC session (cosmic-session).
+Lock screen (Super+L or via menu) uses cosmic-greeter.
+
+
+Notes/Troubleshooting
+    * Recovery: If greeter fails (black screen), switch to console (Ctrl+Alt+F3),
+    log in, and run sudo systemctl restart greetd or edit config back to agreety fallback.
+    * NVIDIA: May require extra driver tweaks for Wayland/DRM (as with any compositor).
+    * Updates: After git pull && just sysext + refresh, restart greetd or reboot.
+    * This is the most integrated method; avoids third-party DMs like SDDM. For production, consider a supported distro (e.g., Pop!_OS).
