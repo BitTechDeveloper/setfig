@@ -1,0 +1,39 @@
+Downloading and Running the Script
+The repository provides a single PHP script (cosmic-debian-installer.php) for installing COSMIC on Debian 13 (Trixie), supporting amd64 and arm64 architectures.
+
+Prerequisites
+Install these packages first:
+    sudo apt update
+    sudo apt install libseat1 alien php-cli php-xml sudo
+
+
+Steps
+
+1. Download the script
+Use one of these methods:
+
+Clone the repository:
+    git clone https://codeberg.org/ashimokawa/cosmic-debian-installer.git
+    cd cosmic-debian-installer
+__OR__
+download the script directly:
+    wget https://codeberg.org/ashimokawa/cosmic-debian-installer/raw/branch/main/cosmic-debian-installer.php
+    chmod +x cosmic-debian-installer.php
+
+
+2. Run the script
+    php cosmic-debian-installer.php
+__OR__
+(Or ./cosmic-debian-installer.php if made executable.)
+
+The script fetches the latest COSMIC RPMs from Fedora COPR.
+It downloads them to a cache/ directory (skipping existing ones).
+It converts them to .deb using alien.
+It installs with sudo (password prompt possible).
+Expect long runtime due to many packages and conversion.
+
+
+3. Log in to COSMIC (with GDM):
+Log out, select your user, choose "COSMIC" session, and log in.
+
+Warnings: This is a workaround ("hack") using RPM-to-DEB conversion. Installation takes significant time. Uninstall by removing the converted .deb packages if needed. Last repository update: January 6, 2026.

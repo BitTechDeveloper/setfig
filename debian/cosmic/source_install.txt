@@ -63,7 +63,8 @@ Install SDDM (good Wayland support):
     sudo apt install -y sddm
     sudo systemctl enable sddm
     sudo reboot
-
+Try greetd first before sddm, cosmicd prefer greetd over sddm
+see below for greetd instructions
 
 At SDDM login:
 
