@@ -1,0 +1,155 @@
+Step 1: Update System
+    sudo apt update
+    sudo apt full-upgrade
+
+Step 2: Install Packages
+    sudo apt install sway waybar wofi swaylock swayidle swaybg mako grim slurp wl-clipboard \
+    brightnessctl foot network-manager pipewire wireplumber pipewire-pulse \
+    greetd tuigreet fonts-font-awesome fonts-noto-color-emoji \
+    xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-wlr polkit-1
+
+Step 3: Enable System Services
+    sudo systemctl enable NetworkManager
+    sudo systemctl enable greetd
+
+Step 4: Allow Brightness Control Without Root
+    sudo usermod -aG video $USER
+
+Step 5: Configure greetd (with tuigreet)
+    sudo mkdir -p /etc/greetd
+    sudo tee /etc/greetd/config.toml > /dev/null <<EOF
+    [terminal]
+    vt = 1
+
+    [default_session]
+    command = "tuigreet --time --remember --asterisks --cmd sway"
+    EOF
+
+Step 6: Reboot to greetd Login
+    sudo reboot
+On boot, tuigreet (text-based) will appear.
+Log in with your username/password.
+Sway will start automatically.
+
+Step 7: First Sway Launch – Generate Base Config
+On first start, Sway prompts for keybindings (vim/emacs arrows) and generates ~/.config/sway/config.
+Choose your preference (default is fine).
+
+Step 8: Configure Sway (~/.config/sway/config)
+Edit the file (e.g., nano ~/.config/sway/config) and 
+add/replace these lines (append at end if not present; comment out any existing bar {} block to disable built-in swaybar):
+    # Start recommended utilities
+    exec mako                  # notifications
+    exec swaybg -c "#000000"   # solid black background (replace with -i /path/to/wallpaper.jpg if desired)
+    exec swayidle -w timeout 300 'swaylock -f' \
+                    timeout 600 'swaymsg "output * dpms off"' \
+                    resume 'swaymsg "output * dpms on"'
+
+    # App launcher
+    bindsym $mod+d exec wofi --show drun --allow-images
+
+    # Lock screen
+    bindsym $mod+l exec swaylock -f
+
+    # Input (default works, add if needed for layout)
+    input * xkb_layout us   # change to your layout if needed
+Save and reload Sway: $mod+Shift+c (reload config) or logout/relogin.
+
+Step 9: Configure Waybar
+Create directories and files:
+    mkdir -p ~/.config/waybar
+~/.config/waybar/config.jsonc (functional modules as requested):
+    {
+        "layer": "top",
+        "position": "top",
+        "height": 36,
+        "modules-left": ["sway/workspaces", "sway/mode"],
+        "modules-center": ["clock"],
+        "modules-right": ["network", "pulseaudio", "backlight", "battery", "tray"],
+
+        "sway/workspaces": {
+            "disable-scroll": true,
+            "all-outputs": true
+        },
+        "clock": {
+            "format": "{:%H:%M %a %d/%m}",
+            "tooltip-format": "{:%A, %d %B %Y}"
+        },
+        "network": {
+            "format-wifi": "{essid} ",
+            "format-ethernet": "",
+            "format-disconnected": "Disconnected ⚠",
+            "tooltip-format": "{ifname}: {ipaddr}/{cidr}"
+        },
+        "pulseaudio": {
+            "format": "{volume}% {icon}",
+            "format-muted": "Muted ",
+            "format-icons": ["", "", ""]
+        },
+        "backlight": {
+            "format": "{percent}% "
+        },
+        "battery": {
+            "format": "{capacity}% {icon}",
+            "format-icons": ["", "", "", "", ""],
+            "format-charging": "{capacity}% "
+        },
+        "tray": {
+            "spacing": 10
+        }
+    }
+~/.config/waybar/style.css (dark theme + hover-reveal: bar hides off-screen, reveals on mouse hover over top edge; 4px trigger strip visible):
+    * {
+        font-family: Noto Sans, Font Awesome 6 Free;
+        font-size: 14px;
+        padding: 0 8px;
+    }
+
+    #waybar {
+        background: rgba(30, 30, 46, 0.95);
+        color: #ffffff;
+        margin-top: -32px;               /* hides most of bar */
+        transition: margin-top 0.3s ease;
+        border-radius: 0 0 10px 10px;
+    }
+
+    #waybar:hover {
+        margin-top: 0;                  /* reveals on hover */
+    }
+
+    #workspaces button {
+        padding: 0 10px;
+        color: #ffffff;
+    }
+
+    #workspaces button.focused {
+        background: #64727D;
+        border-radius: 10px;
+    }
+
+    #clock, #network, #pulseaudio, #backlight, #battery, #tray {
+        padding: 0 15px;
+    }
+
+Step 10: Start Waybar
+Add to ~/.config/sway/config (if not already):
+    exec waybar
+
+Reload Sway ($mod+Shift+c) or relogin.
+
+The bar appears at top, hidden except for a thin 4px trigger at the very top edge.
+Hover mouse at top edge → bar slides down (visible).
+Move mouse away → hides again.
+Icons are functional: click volume/brightness/network/battery to adjust (via controls or menus).
+
+
+Final Notes
+
+Test: Open terminal ($mod+Return → foot), launch apps ($mod+d → wofi), lock ($mod+l), idle lock after 5 min.
+GUI apps: Install e.g. sudo apt install firefox-esr – runs fine.
+Audio/WiFi: Works via Pipewire/NetworkManager (connect via nmtui if needed initially).
+Screenshots: grim -g "$(slurp)" /path/to/file.png.
+If issues: Check logs (journalctl -b -u greetd or swaymsg -t get_version).
+This matches Sway-recommended tools and Debian packaging.
+
+Logout/relogin or reboot to apply everything. Setup complete.
