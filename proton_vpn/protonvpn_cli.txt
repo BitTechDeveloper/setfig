@@ -1,0 +1,71 @@
+link for cli app: https://protonvpn.com/support/linux-cli/ 
+link for server list: https://protonvpn.com/vpn-servers/
+
+
+protonvpn cli:
+    Installation:
+        sudo apt install proton-vpn-cli
+
+    usag:
+        protonvpn signin [username]
+
+    connect to vpn-server:
+        To connect to the fastest VPN server available on your plan, run:
+        protonvpn connect
+
+        To connect to a specific country:
+        protonvpn connect --country [Country]
+
+        For [Country], you can use country code (US, GB, DE) or its full name inside quote marks. For example:
+        protonvpn connect --country US
+        or
+        protonvpn connect --country "United States"
+
+        To connect to a specific city, run:
+        protonvpn connect --city [City]
+
+        For [City], simply enter a single-word city name or use quotes for multi-word names. For example:
+        protonvpn connect --city miami
+        or
+        protonvpn connect --city "New York"
+
+        To connect to a specific server, run:
+        protonvpn connect [server name]
+
+        You can find a list Proton VPN server names here. For example:
+        protonvpn connect CH#242
+
+        Note that country, city, state, and server names are not case sensitive, so it doesn’t matter if you use capital letters or not.
+
+
+    disconnect and sign out:
+        To disconnect the VPN, enter:
+        protonvpn disconnect
+
+        Note that you’ll still be signed in to your Proton VPN account. If other people use this computer, its a good idea to sign out. To do this, run:
+        protonvpn signout
+
+    configure VPN settings:
+        You can configure advanced VPN settings using the protonvpn config set command. For a full list of these commands currently supported by the CLI, run:
+        protonvpn config set
+
+        In many cases, using these commands will simply toggle the feature on or off. For example:
+        protonvpn config set vpn-accelerator on
+
+        Note: These settings reset to their default when you sign out from your Proton VPN account.
+
+    Port forwarding:
+        Port forwarding routes connections through the firewall that we use to protect our customers.
+        It’s mainly used for downloading and sharing files over P2P     protocols (like BitTorrent) and online gaming.
+
+        Enable port forwarding for the Linux CLI is a two-stage process:
+        1. Enable port forwarding in the CLI
+            Run:
+            protonvpn config set port-forwarding on
+            If you’re connected to the VPN, you’ll need to reconnect for the new setting to take effect.
+
+        2. Manually configure port forwarding
+            Once the setting is enabled, you’ll need to configure port forwarding.
+            To do this, visit our How to manually set up port forwarding guide, link: "https://protonvpn.com/support/port-forwarding-manual-setup#linux".
+            Start from Step 2: Linux.
+
