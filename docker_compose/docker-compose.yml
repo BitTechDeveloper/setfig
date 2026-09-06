@@ -1,0 +1,116 @@
+name: dhi-db-dev
+
+services:
+  # ──────────────────────────────────────────────
+  # PostgreSQL Server (Docker Hardened Image)
+  # ──────────────────────────────────────────────
+  postgres:
+    image: dhi.io/postgres:18-debian13
+    container_name: postgres-server
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-app}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets:
+      - postgres_password
+    volumes:
+      - ./data/postgres:/var/lib/postgresql
+      - ./init/postgres:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    networks:
+      - db-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    stop_signal: SIGINT
+    stop_grace_period: 30s
+
+  # PostgreSQL Client
+  postgres-client:
+    image: dhi.io/postgres:18-debian13
+    container_name: postgres-client
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      PGUSER: ${POSTGRES_USER:-postgres}
+      PGDATABASE: ${POSTGRES_DB:-app}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password # ← required by the entrypoint
+      # Note: libpq does not support PGPASSWORD_FILE natively.
+      # For interactive use we read the secret at runtime or use .pgpass.
+    secrets:
+      - postgres_password
+    networks:
+      - db-net
+    entrypoint: ["sleep", "infinity"]
+
+  # ──────────────────────────────────────────────
+  # MySQL Server (Official latest)
+  # ──────────────────────────────────────────────
+  mysql:
+    image: mysql:latest
+    container_name: mysql-server
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_password
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-app}
+      MYSQL_USER: ${MYSQL_USER:-app}
+      MYSQL_PASSWORD_FILE: /run/secrets/mysql_password
+    secrets:
+      - mysql_root_password
+      - mysql_password
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+      - ./init/mysql:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    networks:
+      - db-net
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h localhost -uroot -p$$(cat /run/secrets/mysql_root_password) || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    stop_grace_period: 30s
+
+  # MySQL Client
+  mysql-client:
+    image: mysql:latest
+    container_name: mysql-client
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      MYSQL_HOST: mysql
+    secrets:
+      - mysql_root_password
+    networks:
+      - db-net
+    command: ["sleep", "infinity"]
+
+networks:
+  db-net:
+    driver: bridge
+    name: dhi-db-net
+
+secrets:
+  postgres_password:
+    file: ./secrets/postgres_password.txt
+  mysql_root_password:
+    file: ./secrets/mysql_root_password.txt
+  mysql_password:
+    file: ./secrets/mysql_password.txt
