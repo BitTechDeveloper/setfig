@@ -2,10 +2,10 @@ name: dhi-db-dev
 
 services:
   # ──────────────────────────────────────────────
-  # PostgreSQL Server (Docker Hardened Image)
+  # PostgreSQL Server (Official latest – Debian based)
   # ──────────────────────────────────────────────
   postgres:
-    image: dhi.io/postgres:18-debian13
+    image: postgres:latest
     container_name: postgres-server
     restart: unless-stopped
     environment:
@@ -27,12 +27,11 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
-    stop_signal: SIGINT
     stop_grace_period: 30s
 
   # PostgreSQL Client
   postgres-client:
-    image: dhi.io/postgres:18-debian13
+    image: postgres:latest
     container_name: postgres-client
     restart: unless-stopped
     depends_on:
@@ -43,9 +42,7 @@ services:
       PGPORT: 5432
       PGUSER: ${POSTGRES_USER:-postgres}
       PGDATABASE: ${POSTGRES_DB:-app}
-      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password # ← required by the entrypoint
-      # Note: libpq does not support PGPASSWORD_FILE natively.
-      # For interactive use we read the secret at runtime or use .pgpass.
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
     secrets:
       - postgres_password
     networks:
